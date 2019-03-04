@@ -1,0 +1,48 @@
+using System.IO;
+using System.Web;
+using System.Web.Hosting;
+using Umbraco.Core;
+using Umbraco.Core.Configuration;
+using Umbraco.Web;
+using Umbraco.Web.Routing;
+using Umbraco.Web.Security;
+
+namespace Babcock.Umbraco.Web
+{
+	public static class UmbracoContextHelper
+	{
+		/// <summary>Gets the current <see cref="UmbracoHelper" /> or creates a new one if one does not exist.</summary>
+		/// <returns>An <see cref="UmbracoHelper" /> instance.</returns>
+		public static UmbracoHelper GetUmbracoHelper()
+		{
+			// Ensure that an Umbraco context is available.
+			if (UmbracoContext.Current == null)
+			{
+				HttpContextWrapper dummyContext = new HttpContextWrapper(new HttpContext(new SimpleWorkerRequest("/", string.Empty, new StringWriter())));
+				return GetUmbracoHelper(dummyContext);
+			}
+
+			return new UmbracoHelper(UmbracoContext.Current);
+		}
+
+		/// <summary>Gets the current <see cref="UmbracoHelper" /> or creates a new one if one does not exist.</summary>
+		/// <param name="httpContext">The current HTTP context.</param>
+		/// <returns>An <see cref="UmbracoHelper" /> instance.</returns>
+		public static UmbracoHelper GetUmbracoHelper(HttpContextBase httpContext)
+		{
+			// Ensure that an Umbraco context is available.
+			if (UmbracoContext.Current == null)
+			{
+				UmbracoContext.EnsureContext(
+					httpContext: httpContext,
+					applicationContext: ApplicationContext.Current,
+					webSecurity: new WebSecurity(httpContext, ApplicationContext.Current),
+					umbracoSettings: UmbracoConfig.For.UmbracoSettings(),
+					urlProviders: UrlProviderResolver.Current.Providers,
+					replaceContext: false);
+			}
+
+			return new UmbracoHelper(UmbracoContext.Current);
+		}
+	}
+}
